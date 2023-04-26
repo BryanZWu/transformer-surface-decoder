@@ -6,6 +6,10 @@ from qiskit import Aer, execute, QuantumCircuit, QuantumRegister, ClassicalRegis
 import numpy as np
 
 
+# TODO: instead of defining this noise model, look into using the 
+# noise model from real devices, like the ibmq_16_melbourne
+# https://qiskit.org/documentation/stable/0.34/apidoc/aer_noise.html
+
 def get_noise(p_meas,p_gate):
     '''
     Returns a noise model with the given parameters'''
@@ -21,23 +25,6 @@ def get_noise(p_meas,p_gate):
         
     return noise_model
 
-def seventeen_qubit_planar_code(n_cycles, noise_model):
-    '''
-    Returns a seventeen qubit planar code circuit with a single logical qubit.
-
-    See https://www.researchgate.net/figure/a-Planar-layout-of-the-17-qubit-surface-code-White-black-circles-represent-data_fig1_320223633
-    And https://arxiv.org/pdf/1404.3747.pdf
-
-    In the 17 qubit planar code, logical X can be X2 X4 X6, and logical Z can be Z0 Z4 Z8.
-    According to the second link
-    '''
-    code_register = QuantumRegister(9, 'code_register')
-    ancilla_register = QuantumRegister(8, 'ancilla_register')
-    syndrome_register = ClassicalRegister(8, 'syndrome_register')
-
-
-
-
 def noisy_planar_code(n_physical_qubits, noise_model, n_cycles):
     '''
     Returns a noisy planar code circuit with a single logical qubit.
@@ -48,11 +35,60 @@ def noisy_planar_code(n_physical_qubits, noise_model, n_cycles):
         n_physical_qubits: the number of physical qubits to use
         noise_model: the noise model to use
     '''
-    n_rows = int(n_physical_qubits ** 0.5)
-    if n_rows ** 2 != n_physical_qubits:
-        raise ValueError('n_physical_qubits must be a square number')
-    code_register = QuantumRegister(n_physical_qubits, 'code_register')
+    pass # TODO: implement this
 
-    # In a planar code, there is an ancilla qubit for each data qubit
+def seventeen_qubit_planar_code():
+    '''
+    Returns a seventeen qubit planar code circuit with a single logical qubit.
 
-    # 
+    See https://www.researchgate.net/figure/a-Planar-layout-of-the-17-qubit-surface-code-White-black-circles-represent-data_fig1_320223633
+    And https://arxiv.org/pdf/1404.3747.pdf
+
+    In the 17 qubit planar code, logical X can be X2 X4 X6, and logical Z can be Z0 Z4 Z8.
+    According to the second link
+
+    The definitions of syndrome bits are as follows:
+
+    First, the X syndromes
+    S0 = X1 X2
+    S1 = X0 X1 X3 X4
+    S2 = X4 X5 X7 X8
+    S3 = X6 X7
+
+    Then, the Z syndromes
+    S4 = Z0 Z3
+    S5 = Z1 Z2 Z4 Z5
+    S6 = Z3 Z4 Z6 Z7
+    S7 = Z5 Z8
+    '''
+    x_syndrome = {
+        0: [1, 2],
+        1: [0, 1, 3, 4],
+        2: [4, 5, 7, 8],
+        3: [6, 7]
+    }
+    z_syndrome = {
+        4: [0, 3],
+        5: [1, 2, 4, 5],
+        6: [3, 4, 6, 7],
+        7: [5, 8]
+    }
+    code_register = QuantumRegister(9, 'code_register')
+    ancilla_register = QuantumRegister(8, 'ancilla_register')
+    syndrome_register = ClassicalRegister(8, 'syndrome_register')
+    
+    # define the circuit
+    circuit = QuantumCircuit(code_register, ancilla_register, syndrome_register, name='seventeen_qubit_planar_code')
+
+    # define ancilla qubits by adding gates. First, the X ancillas
+    for ancilla in x_syndrome:
+        for qubit in x_syndrome[ancilla]:
+            circuit.cx(code_register[qubit], ancilla_register[ancilla])
+
+    # Then, the Z ancillas
+    for ancilla in z_syndrome:
+        for qubit in z_syndrome[ancilla]:
+            circuit.cz(code_register[qubit], ancilla_register[ancilla])
+    return circuit
+
+circuit = seventeen_qubit_planar_code()
