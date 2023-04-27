@@ -1,6 +1,6 @@
 import os
 import pandas as pd
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 import random
 from qiskit import Aer, execute, QuantumCircuit, QuantumRegister, ClassicalRegister
 from simulate import seventeen_qubit_planar_code, get_noise
@@ -16,8 +16,8 @@ class SurfaceCodeDataset(Dataset):
         self.noise_model = noise_model
 
     def __len__(self):
-        return -1 # Infinite dataset, just simulate on demand
-        # return 100 # Random fixed size dataset
+        # return -1 # Infinite dataset, just simulate on demand
+        return 1000 # Random fixed size dataset
 
     def __getitem__(self, idx):
         '''Just simulate the circuit and return the result'''
@@ -37,7 +37,13 @@ class SurfaceCodeDataset(Dataset):
         tensor_result = tensor_result.reshape(stabilizer_measurement_cycles, -1)
         return tensor_result
 
+        # TODO: syndrome increments, aka the difference between consecutive syndrome measurements
+        # should be added to the dataset as well.
+
 if __name__ == '__main__':
     noise_model = get_noise(0.01, 0.01)
     ds = SurfaceCodeDataset(noise_model)
-    print(ds[0])
+
+    dl = DataLoader(ds, batch_size=32, num_workers=2)
+    for batch in dl:
+        break
