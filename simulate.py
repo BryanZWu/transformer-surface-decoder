@@ -4,6 +4,7 @@ from qiskit.providers.aer.noise import NoiseModel
 from qiskit.providers.aer.noise.errors import pauli_error, depolarizing_error
 from qiskit import Aer, execute, QuantumCircuit, QuantumRegister, ClassicalRegister
 import numpy as np
+import time
 
 
 # TODO: instead of defining this noise model, look into using the 
@@ -37,7 +38,7 @@ def noisy_planar_code(n_physical_qubits, noise_model, n_cycles):
     '''
     pass # TODO: implement this
 
-def seventeen_qubit_planar_code():
+def seventeen_qubit_planar_code(num_cycles=1):
     '''
     Returns a seventeen qubit planar code circuit with a single logical qubit.
 
@@ -75,7 +76,7 @@ def seventeen_qubit_planar_code():
     }
     code_register = QuantumRegister(9, 'code_register')
     ancilla_register = QuantumRegister(8, 'ancilla_register')
-    syndrome_register = ClassicalRegister(8, 'syndrome_register')
+    syndrome_register = ClassicalRegister(8 * num_cycles, 'syndrome_register')
     
     # define the circuit
     circuit = QuantumCircuit(code_register, ancilla_register, syndrome_register, name='seventeen_qubit_planar_code')
@@ -89,6 +90,16 @@ def seventeen_qubit_planar_code():
     for ancilla in z_syndrome:
         for qubit in z_syndrome[ancilla]:
             circuit.cz(code_register[qubit], ancilla_register[ancilla])
+    
+    n_syndromes = len(x_syndrome) + len(z_syndrome)
+    for i in range(num_cycles):
+        # Measure the X stabilizers
+        for ancilla in x_syndrome:
+            circuit.measure(ancilla_register[ancilla], syndrome_register[i * n_syndromes + ancilla])
+        
+        # Measure the Z stabilizers
+        for ancilla in z_syndrome:
+            circuit.measure(ancilla_register[ancilla], syndrome_register[i * n_syndromes + ancilla])
+
     return circuit
 
-circuit = seventeen_qubit_planar_code()
