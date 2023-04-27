@@ -4,6 +4,8 @@ from torch.utils.data import Dataset
 import random
 from qiskit import Aer, execute, QuantumCircuit, QuantumRegister, ClassicalRegister
 from simulate import seventeen_qubit_planar_code, get_noise
+import torch
+import time
 
 class SurfaceCodeDataset(Dataset):
     """
@@ -20,13 +22,22 @@ class SurfaceCodeDataset(Dataset):
     def __getitem__(self, idx):
         '''Just simulate the circuit and return the result'''
         stabilizer_measurement_cycles = random.randint(1, 300)
-        stabilizer_measurement_cycles = 2
+        stabilizer_measurement_cycles = 25
         circuit = seventeen_qubit_planar_code(stabilizer_measurement_cycles)
         
         # Execute the noisy simulation, measuring the stabilizers at each cycle
         result = execute(circuit, Aer.get_backend('qasm_simulator'), noise_model=self.noise_model, shots=1).result()
-        return result.get_counts()
+        
+        result = next(iter(result.get_counts()))
+
+        result = [int(x) for x in result]
+        # String is little endian, so C0S0 is the last bit. Reverse it.
+        tensor_result = torch.tensor(result[::-1])
+        # 1d tensor is ordered as [Cycle 1 Syndrome 1, Cycle 1 Syndrome 2, ... Cycle 1 Syndrome 7, Cycle 2 Syndrome 1, ...]
+        tensor_result = tensor_result.reshape(stabilizer_measurement_cycles, -1)
+        return tensor_result
 
 if __name__ == '__main__':
     noise_model = get_noise(0.01, 0.01)
     ds = SurfaceCodeDataset(noise_model)
+    print(ds[0])

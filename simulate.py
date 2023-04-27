@@ -100,6 +100,7 @@ def seventeen_qubit_planar_code(num_cycles=1):
         # Measure the Z stabilizers
         for ancilla in z_syndrome:
             circuit.measure(ancilla_register[ancilla], syndrome_register[i * n_syndromes + ancilla])
+    
 
     return circuit
 
