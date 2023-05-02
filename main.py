@@ -15,7 +15,7 @@ def main():
 
     # Create a model
     print("creating model")
-    m = model.SurfaceCodeDecoder(
+    nn = model.SurfaceCodeDecoder(
         n_attn_dims=8,
         n_heads=4,
         n_attn_layers=2,
@@ -27,14 +27,44 @@ def main():
     
     # Dataloader
     print("Creating DataLoader")
-    dl = DataLoader(ds, batch_size=32, num_workers=2)
-
-    print("Iterating over DataLoader")
-    for batch in dl:
-        break
+    dl = DataLoader(ds, batch_size=16, num_workers=2)
 
     # Train the model
-    # m.train(ds, s, 100, 100, 0.001, 0.9, 0.1, 10, 10)
+    print("Training model")
+    nn.train()
+
+    optimizer = torch.optim.Adam(nn.parameters(), lr=0.001)
+    loss_fn = torch.nn.BCELoss()
+
+    for epoch in range(10):
+        for batch in dl:
+            optimizer.zero_grad()
+
+            syndrome, logical, logical_state = batch
+            output = nn(syndrome, logical)
+
+            loss = loss_fn(output, logical_state.float().unsqueeze(1))
+            loss.backward()
+            optimizer.step()
+
+            print(loss.item())
+
+    # Test the model
+    print("Testing model")
+    nn.eval()
+    with torch.no_grad():
+        for batch in dl:
+            syndrome, logical, logical_state = batch
+            output = nn(syndrome, logical)
+
+            print(output)
+            print(logical_state)
+
+            break
+
+
+
+    
 
 
 if __name__ == '__main__':

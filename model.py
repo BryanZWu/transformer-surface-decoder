@@ -70,7 +70,7 @@ class SurfaceCodeDecoder(nn.Module):
         syndrome = torch.cat([class_emb, syndrome], dim=1)
         
         # Add positional embedding
-        syndrome += self.pos_embedding[:seq_len + 1, :].repeat(batch_size, 1)
+        syndrome += self.pos_embedding[:seq_len + 1, :].repeat(batch_size, 1, 1)
 
         # Hittem with that transformer
         syndrome = self.syndrome_head(syndrome)

@@ -47,6 +47,9 @@ class SurfaceCodeDataset(Dataset):
         logical_result = [int(x) for x in logical_result]
         tensor_logical = torch.tensor(logical_result[::-1])
 
+        # use float64 for the tensors to feed into the model
+        tensor_logical = tensor_logical.type(torch.float32)
+        tensor_syndrome = tensor_syndrome.type(torch.float32)
 
         return tensor_syndrome, tensor_logical, logical_state
 
