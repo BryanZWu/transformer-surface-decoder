@@ -1,6 +1,7 @@
 # model decoder for 17 qubit planar code
 import torch
 import torch.nn as nn
+import torch.nn.init as init
 
 class SurfaceCodeDecoder(nn.Module):
     '''
@@ -32,9 +33,6 @@ class SurfaceCodeDecoder(nn.Module):
 
         self.class_embedding = nn.Parameter(torch.randn(n_attn_dims))
         self.pos_embedding = nn.Parameter(torch.randn(max_seq_len, n_attn_dims))
-        # Initialize using xaiver uniform initialization
-        nn.init.xavier_uniform_(self.class_embedding)
-        nn.init.xavier_uniform_(self.pos_embedding)
 
         self.embedder = nn.Linear(8, n_attn_dims)
 
