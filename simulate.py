@@ -38,7 +38,7 @@ def noisy_planar_code(n_physical_qubits, noise_model, n_cycles):
     '''
     pass # TODO: implement this
 
-def seventeen_qubit_planar_code(num_cycles=1):
+def seventeen_qubit_planar_code(num_cycles=1, logical_state=0):
     '''
     Returns a seventeen qubit planar code circuit with a single logical qubit.
 
@@ -62,6 +62,10 @@ def seventeen_qubit_planar_code(num_cycles=1):
     S6 = Z3 Z4 Z6 Z7
     S7 = Z5 Z8
     '''
+    if logical_state != -1:
+        raise NotImplementedError('Specifying a logical state is not yet implemented')
+
+
     x_syndrome = {
         0: [1, 2],
         1: [0, 1, 3, 4],
@@ -76,10 +80,11 @@ def seventeen_qubit_planar_code(num_cycles=1):
     }
     code_register = QuantumRegister(9, 'code_register')
     ancilla_register = QuantumRegister(8, 'ancilla_register')
+    output_register = ClassicalRegister(9, 'output_register')
     syndrome_register = ClassicalRegister(8 * num_cycles, 'syndrome_register')
     
     # define the circuit
-    circuit = QuantumCircuit(code_register, ancilla_register, syndrome_register, name='seventeen_qubit_planar_code')
+    circuit = QuantumCircuit(code_register, ancilla_register, output_register, syndrome_register, name='seventeen_qubit_planar_code')
 
     # define ancilla qubits by adding gates. First, the X ancillas
     for ancilla in x_syndrome:
@@ -101,6 +106,9 @@ def seventeen_qubit_planar_code(num_cycles=1):
         for ancilla in z_syndrome:
             circuit.measure(ancilla_register[ancilla], syndrome_register[i * n_syndromes + ancilla])
     
+    # Measure the output
+    for i in range(9):
+        circuit.measure(code_register[i], output_register[i])
 
     return circuit
 
