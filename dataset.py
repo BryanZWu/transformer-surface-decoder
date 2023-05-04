@@ -24,11 +24,8 @@ class SurfaceCodeDataset(Dataset):
         stabilizer_measurement_cycles = random.randint(1, 300)
         stabilizer_measurement_cycles = 5
 
-        # Randomly choose a logical state
-        logical_state = random.randint(0, 1)
-
         # circuit = seventeen_qubit_planar_code(stabilizer_measurement_cycles, logical_state=logical_state)
-        circuit = seventeen_qubit_planar_code(stabilizer_measurement_cycles, logical_state=-1)
+        circuit, logical_state = seventeen_qubit_planar_code(stabilizer_measurement_cycles, logical_state=-1)
         
         # Execute the noisy simulation, measuring the stabilizers at each cycle
         result = execute(circuit, Aer.get_backend('qasm_simulator'), noise_model=self.noise_model, shots=1).result()
@@ -51,6 +48,8 @@ class SurfaceCodeDataset(Dataset):
         tensor_logical = tensor_logical.type(torch.float32)
         tensor_syndrome = tensor_syndrome.type(torch.float32)
 
+        # Convert logical state, currently a string, to ordinal encoding
+        logical_state = {'0': 0, '1': 1, '-': 2, '+': 3}[logical_state]
         return tensor_syndrome, tensor_logical, logical_state
 
         # TODO: syndrome increments, aka the difference between consecutive syndrome measurements
