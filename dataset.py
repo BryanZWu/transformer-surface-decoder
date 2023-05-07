@@ -25,7 +25,7 @@ class SurfaceCodeDataset(Dataset):
         stabilizer_measurement_cycles = 5
 
         # circuit = seventeen_qubit_planar_code(stabilizer_measurement_cycles, logical_state=logical_state)
-        circuit, logical_state = seventeen_qubit_planar_code(stabilizer_measurement_cycles, logical_state=-1)
+        circuit, logical_state = seventeen_qubit_planar_code(stabilizer_measurement_cycles, n_gates=1)
         
         # Execute the noisy simulation, measuring the stabilizers at each cycle
         result = execute(circuit, Aer.get_backend('qasm_simulator'), noise_model=self.noise_model, shots=1).result()
@@ -53,13 +53,14 @@ class SurfaceCodeDataset(Dataset):
         return tensor_syndrome, tensor_logical, logical_state
 
         # TODO: syndrome increments, aka the difference between consecutive syndrome measurements
-        # should be added to the dataset as well.
+        # should be added to the dataset as well, maybe?
 
 if __name__ == '__main__':
     noise_model = get_noise(0.01, 0.01)
     ds = SurfaceCodeDataset(noise_model)
 
     dl = DataLoader(ds, batch_size=2, num_workers=2)
+    print("Created DataLoader")
     for batch in dl:
         print(batch)
         break

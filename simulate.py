@@ -2,7 +2,7 @@
 
 from qiskit.providers.aer.noise import NoiseModel
 from qiskit.providers.aer.noise.errors import pauli_error, depolarizing_error
-from qiskit import Aer, execute, QuantumCircuit, QuantumRegister, ClassicalRegister
+from qiskit import Aer, execute, QuantumCircuit, QuantumRegister, ClassicalRegister, AncillaRegister
 import numpy as np
 import random
 import time
@@ -12,9 +12,12 @@ import time
 # noise model from real devices, like the ibmq_16_melbourne
 # https://qiskit.org/documentation/stable/0.34/apidoc/aer_noise.html
 
-def apply_random_logical_gates(code_register, gate_types='x', n_gates=5):
+def apply_random_logical_gates(circuit, code_register, gate_types='x', n_gates=5):
     '''
     Applies a random number of logical gates, including identities, to the code register.
+
+    NOTE: In a circuit with noise, this initial state may be corrupted or noisy, since 
+    there's no way to set up the initial state without applying gates.
 
     Args:
         code_register: the code register to apply the gates to
@@ -49,6 +52,8 @@ def apply_random_logical_gates(code_register, gate_types='x', n_gates=5):
         ([8, 4, 1, 2], 'i'),
     ]
 
+    # TODO: do all of this classically and then apply end results to avoid noise
+
     gate_pool = x_gates if gate_types == 'x' else z_gates
     current_state = '0'
 
@@ -57,14 +62,17 @@ def apply_random_logical_gates(code_register, gate_types='x', n_gates=5):
     for _ in range(n_gates):
         gate = random.choice(gate_pool)
         qubits, gate_type = gate
+        
+        # Gate types = which basis we're working in, affects physical qubits
+        # Gate type = what gate to apply to the logical qubit.
         if gate_types == 'x':
             for qubit in qubits:
-                code_register[qubit].x(current_state)
+                circuit.x(code_register[qubit])
         elif gate_types == 'z':
             for qubit in qubits:
-                code_register[qubit].z(current_state)
+                circuit.x(code_register[qubit])
         else:
-            raise ValueError(f'Invalid gate type {gate_type}')
+            raise ValueError(f'Invalid gate type {repr(gate_types)}')
         if gate_type == 'x':
             current_state = '1' if current_state == '0' else '0'
         elif gate_type == 'z':
@@ -102,7 +110,7 @@ def noisy_planar_code(n_physical_qubits, noise_model, n_cycles):
     '''
     pass # TODO: implement this
 
-def seventeen_qubit_planar_code(num_cycles=1, basis='01'):
+def seventeen_qubit_planar_code(num_cycles=1, basis='01', n_gates=5):
     '''
     Returns a seventeen qubit planar code circuit with a single logical qubit.
 
@@ -152,7 +160,8 @@ def seventeen_qubit_planar_code(num_cycles=1, basis='01'):
         7: [5, 8],
     }
     code_register = QuantumRegister(9, 'code_register')
-    ancilla_register = QuantumRegister(8, 'ancilla_register')
+    # Note: there is effectively no differencei in implementation between a quantum register and an ancilla register, save naming
+    ancilla_register = AncillaRegister(8, 'ancilla_register')
     output_register = ClassicalRegister(9, 'output_register')
     syndrome_register = ClassicalRegister(8 * num_cycles, 'syndrome_register')
     
@@ -160,7 +169,7 @@ def seventeen_qubit_planar_code(num_cycles=1, basis='01'):
     circuit = QuantumCircuit(code_register, ancilla_register, output_register, syndrome_register, name='seventeen_qubit_planar_code')
 
     # First, apply gates to randomly initialize to a particular logical state
-    cur_state = apply_random_logical_gates(code_register, 'x', 5)
+    cur_state = apply_random_logical_gates(circuit, code_register, 'x', n_gates=n_gates)
 
     # define ancilla qubits by adding gates. First, the X ancillas
     for ancilla in x_syndrome:

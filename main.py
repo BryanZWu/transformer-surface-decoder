@@ -37,6 +37,7 @@ def main():
     loss_fn = torch.nn.BCELoss()
 
     for epoch in range(10):
+        loss = 0
         for batch in dl:
             optimizer.zero_grad()
 
@@ -46,8 +47,9 @@ def main():
             loss = loss_fn(output, logical_state.float().unsqueeze(1))
             loss.backward()
             optimizer.step()
+            loss += loss.item()
 
-            print(loss.item())
+        print('loss:', loss.item())
 
     # Test the model
     print("Testing model")
